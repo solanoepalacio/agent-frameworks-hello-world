@@ -39,8 +39,12 @@ Each implementation lives side-by-side and follows the same conceptual specifica
 
 ```
 agentic-architectures/
-├── spec/              # Language-agnostic task specification
-│   └── task.md
+├── spec/              # Task specification + input generator
+│   ├── task.md        # Language-agnostic task spec
+│   ├── format.md      # Message format spec (used in LLM prompts)
+│   ├── generate.py    # Conversation transcript generator
+│   ├── requirements.txt
+│   └── inputs/        # Generated conversation files
 ├── langchain/         # LangChain
 ├── langgraph/         # LangGraph
 ├── google-adk/        # Google Agent Development Kit
@@ -49,10 +53,49 @@ agentic-architectures/
 └── llamaindex/        # LlamaIndex Agents
 ```
 
-Each framework directory is a fully independent, self-contained project with its own dependency management and source code. Implementations may use different languages depending on the framework ecosystem. There is no shared code between them — all implementations follow the language-agnostic task specification defined in `spec/`.
+Each directory is a fully independent, self-contained project with its own dependencies. Implementations may use different languages depending on the framework ecosystem. There is no shared code between them — all implementations follow the language-agnostic task specification defined in `spec/`.
 
 Conventions:
 - Directory names use kebab-case.
 - Each directory manages its own environment and dependencies.
 - All implementations must conform to the spec in `spec/task.md`.
+
+## Generating input data
+
+The `spec/generate.py` script uses an LLM (via Ollama) to produce conversation transcript files that follow the format in `spec/task.md`.
+
+### Setup
+
+```bash
+cd spec/
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Usage
+
+```bash
+export OLLAMA_BASE_URL="http://<host>:<port>/v1"
+
+python spec/generate.py \
+  --characters alice,bob,charlie,diana,eve,frank,grace,henry,iris,jack \
+  --count 10 \
+  --model gpt-oss:20b \
+  --verbose
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--characters` | yes* | — | Comma-separated character names |
+| `--characters-file` | yes* | — | JSON file with character list |
+| `--count` | yes | — | Number of files to generate |
+| `--messages` | no | `100` | Approx messages per conversation |
+| `--output-dir` | no | `spec/inputs/` | Output directory |
+| `--model` | no | `gpt-oss:20b` | Ollama model name |
+| `--verbose` | no | off | Debug logging |
+
+\*Mutually exclusive; one is required.
+
+Each generated file is validated against the message format spec. Invalid outputs are retried up to 3 times before being skipped.
 
