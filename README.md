@@ -20,13 +20,14 @@ This pattern is deliberately chosen because it is simple to reason about while s
 
 This repository is about learning, comparison, and experimentation. Performance optimization, production hardening, and UX polish are explicitly out of scope. Frameworks are used mostly “as intended” rather than pushed into extreme or contrived designs.
 
-Multi-agent architectures, evaluation harnesses, and more complex behaviors may be explored later, but the initial focus is on a single reflective agent implemented multiple times.
+Multi-agent architectures, evaluation harnesses, and more complex behaviors will be explored later, but the initial focus is on a single reflective agent implemented multiple times.
 
 ## Frameworks explored
 
 The same agent behavior will be implemented independently using the following frameworks:
 
-- LangChain and LangGraph  
+- LangChain
+- LangGraph  
 - Google Agent Development Kit (ADK)  
 - Anthropic Agent SDK  
 - CrewAI  
@@ -36,4 +37,23 @@ Each implementation lives side-by-side and follows the same conceptual specifica
 
 ## Structure
 
-## Why this exists
+```
+agentic-architectures/
+├── spec/              # Language-agnostic task specification
+│   └── task.md
+├── langchain/         # LangChain
+├── langgraph/         # LangGraph
+├── google-adk/        # Google Agent Development Kit
+├── anthropic-sdk/     # Anthropic Agent SDK
+├── crewai/            # CrewAI
+└── llamaindex/        # LlamaIndex Agents
+```
+
+Each framework directory is a fully independent, self-contained project with its own dependency management and source code. Implementations may use different languages depending on the framework ecosystem. There is no shared code between them — all implementations follow the language-agnostic task specification defined in `spec/`.
+
+Conventions:
+- Directory names use kebab-case.
+- Each directory manages its own environment and dependencies.
+- All implementations must conform to the spec in `spec/task.md`.
+
+> **Future: shared evaluation harness.** A cross-framework evaluation harness is planned but not yet in place. When building each implementation, keep agent inputs and outputs aligned with the spec so that a shared harness can be layered on later without significant refactoring.
