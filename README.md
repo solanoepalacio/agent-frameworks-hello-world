@@ -56,4 +56,3 @@ Conventions:
 - Each directory manages its own environment and dependencies.
 - All implementations must conform to the spec in `spec/task.md`.
 
-> **Future: shared evaluation harness.** A cross-framework evaluation harness is planned but not yet in place. When building each implementation, keep agent inputs and outputs aligned with the spec so that a shared harness can be layered on later without significant refactoring.
