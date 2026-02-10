@@ -18,7 +18,7 @@ The agent’s task is to **count how many times each participant appears** acros
 
 An appearance is defined as:
 
-> A single spoken message attributed to a participant.
+> A participant having at least one spoken message in a given conversation file. Multiple messages by the same participant in the same file count as a single appearance.
 
 The expected result is compared against a **ground‑truth file** provided by the task author.
 

@@ -114,6 +114,16 @@ def validate_transcript(text: str, allowed_characters: set[str]) -> tuple[bool, 
     return True, ""
 
 
+def extract_characters(transcript: str) -> set[str]:
+    """Extract the set of unique character names from a validated transcript."""
+    characters = set()
+    for line in transcript.splitlines():
+        match = MESSAGE_RE.match(line)
+        if match:
+            characters.add(match.group(1))
+    return characters
+
+
 def generate_conversation(
     client: OpenAI,
     model: str,
@@ -175,8 +185,9 @@ def main() -> None:
     group.add_argument("--characters-file", type=str, help="JSON file with character list")
     parser.add_argument("--count", type=int, required=True, help="Number of files to generate")
     parser.add_argument("--messages", type=int, default=100, help="Approx messages per conversation (default: 100)")
-    parser.add_argument("--output-dir", type=str, default="spec/inputs/", help="Output directory (default: spec/inputs/)")
+    parser.add_argument("--output-dir", type=str, default="inputs/", help="Output directory (default: inputs/)")
     parser.add_argument("--model", type=str, default="gpt-oss:20b", help="Ollama model name (default: gpt-oss:20b)")
+    parser.add_argument("--ground-truth", type=str, default=None, help="Path for ground-truth JSON (default: <ground-truth.json)")
     parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
 
     args = parser.parse_args()
@@ -231,6 +242,7 @@ def main() -> None:
 
     succeeded = 0
     failed = 0
+    counts: dict[str, int] = {}
 
     for i in range(1, args.count + 1):
         # Pick 2-4 random characters for this conversation
@@ -259,7 +271,18 @@ def main() -> None:
         succeeded += 1
         logger.debug("Wrote %s", file_path)
 
+        # Update ground-truth counts (per-file appearance)
+        for name in extract_characters(transcript):
+            counts[name] = counts.get(name, 0) + 1
+
     print(f"\nDone: {succeeded} succeeded, {failed} failed out of {args.count} total")
+
+    # Write ground-truth file
+    if succeeded > 0:
+        gt_path = Path(args.ground_truth) if args.ground_truth else output_dir.parent / "ground-truth.json"
+        sorted_counts = dict(sorted(counts.items()))
+        gt_path.write_text(json.dumps(sorted_counts, indent=2) + "\n", encoding="utf-8")
+        print(f"Ground-truth written to {gt_path}")
 
     if failed > 0:
         sys.exit(1)
