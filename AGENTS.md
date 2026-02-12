@@ -1,15 +1,53 @@
 # Agents
 
-## Project
+This repository is a practical learning project to explore modern agentic frameworks by implementing the same small, non-trivial “hello world” agent across multiple ecosystems.
 
-Comparative learning repo. The same reflective agent (task, validate, reflect, retry) is implemented independently across 6 frameworks. Implementations may use different languages.
+The goal is not to build a useful product, but to gain hands-on understanding of how different frameworks model agents, control flow, state, tool usage, and iteration. By keeping the use case intentionally simple and consistent, the focus stays on architectural trade-offs rather than domain complexity.
 
-## Structure rules
+## What “hello world” means here
 
-- Framework directories use kebab-case and are fully self-contained (own deps, own environment, no shared code).
-- All implementations conform to `spec/task.md`.
-- Do not create per-framework documentation files — observations are tracked externally.
+In this project, a “hello world” agent is not a single prompt or a static chain. Each implementation must include at least a minimal agent loop with decision-making and tool usage.
 
-## Evaluation harness
+The baseline agent:
+- attempts to solve a small constrained task,
+- validates its own output using a deterministic tool,
+- reflects and retries when validation fails,
+- stops when the task succeeds or a maximum number of attempts is reached.
 
-A shared cross-framework evaluation harness will be added later. When building any implementation, keep agent inputs and outputs aligned with the spec so the harness can be layered on without refactoring.
+This pattern is deliberately chosen because it is simple to reason about while still surfacing meaningful differences between frameworks.
+
+## Scope and non-goals
+
+This repository is about learning, comparison, and experimentation. Performance optimization, production hardening, and UX polish are explicitly out of scope. Frameworks are used mostly “as intended” rather than pushed into extreme or contrived designs.
+
+Multi-agent architectures, evaluation harnesses, and more complex behaviors will be explored later, but the initial focus is on a single reflective agent implemented multiple times.
+
+## Frameworks explored
+
+The same agent behavior will be implemented independently using the following frameworks:
+
+- LangChain
+- LangGraph  
+- Google Agent Development Kit (ADK)  
+- Anthropic Agent SDK  
+- CrewAI  
+- LlamaIndex Agents  
+
+Each implementation lives side-by-side and follows the same conceptual specification, even if the underlying abstractions differ.
+
+## Structure
+
+```
+agentic-architectures/
+├── spec/              # Task specification + input generator
+│   ├── task.md        # Language-agnostic task spec
+│   ├── format.md      # Message format spec (used in LLM prompts)
+│   ├── generate.py    # Conversation transcript generator
+│   ├── requirements.txt
+│   └── inputs/        # Generated conversation files
+├── langchain/         # LangChain
+├── langgraph/         # LangGraph
+├── google-adk/        # Google Agent Development Kit
+├── anthropic-sdk/     # Anthropic Agent SDK
+├── crewai/            # CrewAI
+└── llamaindex/        # LlamaIndex Agents
