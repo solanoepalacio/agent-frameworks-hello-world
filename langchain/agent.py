@@ -9,6 +9,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
+from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain_ollama import ChatOllama
 
@@ -91,13 +92,38 @@ def extract_json(text: str) -> dict | None:
     return None
 
 
+def run_attempt(agent, messages, debug: bool = False) -> dict | None:
+    """Run a single agent attempt, streaming updates and logging tool calls."""
+    last_ai_content = ""
+
+    for chunk in agent.stream({"messages": messages}, stream_mode="updates"):
+        for node, value in chunk.items():
+            for msg in value.get("messages", []):
+                if isinstance(msg, AIMessage) and msg.tool_calls:
+                    for tc in msg.tool_calls:
+                        args = ", ".join(f"{k}={v!r}" for k, v in tc["args"].items())
+                        print(f"  -> {tc['name']}({args})", file=sys.stderr)
+
+                elif isinstance(msg, ToolMessage) and debug:
+                    preview = msg.content[:80].replace("\n", "\\n")
+                    if len(msg.content) > 80:
+                        preview += "..."
+                    print(f"  <- {preview}", file=sys.stderr)
+
+                elif isinstance(msg, AIMessage) and msg.content:
+                    last_ai_content = msg.content
+                    if debug:
+                        print(f"  ai: {msg.content[:120]}", file=sys.stderr)
+
+    return extract_json(last_ai_content)
+
+
 def run(max_attempts: int = 3, verbose: bool = False) -> dict | None:
     agent = build_agent(verbose=verbose)
     task_prompt = load_task_prompt()
 
     for attempt in range(1, max_attempts + 1):
-        if verbose:
-            print(f"\n--- Attempt {attempt}/{max_attempts} ---", file=sys.stderr)
+        print(f"--- Attempt {attempt}/{max_attempts} ---", file=sys.stderr)
 
         messages = [{"role": "user", "content": task_prompt}]
         if attempt > 1:
@@ -109,20 +135,11 @@ def run(max_attempts: int = 3, verbose: bool = False) -> dict | None:
                 }
             )
 
-        result = agent.invoke({"messages": messages})
+        parsed = run_attempt(agent, messages, debug=verbose)
+        if parsed:
+            return parsed
 
-        # The last AI message contains the final answer
-        ai_messages = [
-            m for m in result["messages"] if hasattr(m, "type") and m.type == "ai"
-        ]
-        if ai_messages:
-            output = ai_messages[-1].content
-            parsed = extract_json(output)
-            if parsed:
-                return parsed
-
-        if verbose:
-            print("Could not parse JSON from output, retrying...", file=sys.stderr)
+        print("Could not parse JSON from output, retrying...", file=sys.stderr)
 
     print(
         f"Failed to get valid JSON after {max_attempts} attempts.",
